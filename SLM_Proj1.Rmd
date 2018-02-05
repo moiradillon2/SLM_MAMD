@@ -16,7 +16,7 @@ require(Lahman)
 require(skimr)
 ```
 
-We will be analyzing The Lahman Baseball Database, available on R. This database includes pitching, hitting, and fielding stats for Major League Baseball from 1871 through 2016. This dataset is the largest available for baseball statistics. Specifically, this data set includes information on batting, pitching, fielding, all-star statistics, hall of fame, managers, teams, batting, pitching, and fielding in the post season, franchises, managers, salaries, awards, school history, in addition to a handful of other factors. While this data set is available in R, we compiled the files together using a Python script and imported this csv into R (file and script on Github).
+We will be analyzing The Lahman Baseball Database, available on R. This database includes pitching, hitting, and fielding stats for Major League Baseball from 1871 through 2016. This data set is the largest available for baseball statistics. Specifically, this data set includes information on batting, pitching, fielding, all-star statistics, hall of fame, managers, teams, batting, pitching, and fielding in the post season, franchises, managers, salaries, awards, school history, in addition to a handful of other factors. While this data set is available in R, we compiled the files together using a Python script and imported this csv into R (file and script on Github).
 
 Specifically, we will be analyzing players salaries, awards, statistics for batting & fielding during regular and post season, along with their birth date, height, weight, playing hand, and birth country.
 
@@ -32,13 +32,13 @@ The observational unit for our data is the player, allow there are possible ways
 
 The columns corresponding to year, stint (play with more than one team per season), team, league, games played, at bats, runs, hits, doubles, triples, home runs, RBIs, stolen bases, caught stealing (CS), walks, strikeout, intentional walks, hit by pitch, sacrifice hit, sacrifice fly, grounds into double play, salary, awards, award ties, birth month, birth country, weight, height, bats with R/L hand, throws with R/L hand, and full name.
 
-For the quantitative variables, we can use skim() to summarize the vector, outputting the number of misisng and complete entries, the mean, sd, and median, the variable type, and a histogram. Below is an example for number of runs.
+For the quantitative variables, we can use skim() to summarize the vector, outputting the number of missing and complete entries, the mean, SD, and median, the variable type, and a histogram. Below is an example for number of runs.
 
 ```{r, eval=TRUE}
 skim(Lahman$R)
 ```
 
-Using skim(), we comiled the number of missing and complete entries along with the mean, sd, and median for all of the quantitative variables of interest in our dataset.
+Using skim(), we compiled the number of missing and complete entries along with the mean, SD, and median for all of the quantitative variables of interest in our data set.
 ```{r, eval=TRUE}
 summary_quant <- read.csv("summary.csv")
 summary_quant
@@ -62,7 +62,7 @@ Note that this set of histograms does not include all of the quantitative variab
 
 For each variable plotted here, we observe that the data is skewed  far to the left. For the number of games played per individual, we observe a slightly more symmetric distribution, although still skewed left.
 
-It will be interesting to analyze how these frequenecy numbers change as we subset the data. For example, a question we might ask is "Do award winning baseball players have significantly more hits/runs/etc. than the entire professional baseball population?" 
+It will be interesting to analyze how these frequency numbers change as we subset the data. For example, a question we might ask is "Do award winning baseball players have significantly more hits/runs/etc. than the entire professional baseball population?" 
 
 In addition to how playing statistics vary between award winners and the entire baseball population, we can analyze this data set based on salary as well. 
 
@@ -70,10 +70,9 @@ In addition to how playing statistics vary between award winners and the entire 
 par(mfrow=c(1,2))
 hist(Lahman$salary, xlab = "Salary", main = "Player Salary")
 plot(Lahman$yearID, Lahman$salary, xlim = c(1985,2016), xlab = "Year", ylab = "Salary", main = "Salary 1985-2016")
-skim(Lahman$salary)
 ```
 
-We observe that the data is also skewed far to the left. Using the skim function, we see that the mean salary is \$2,120,866.95 while the median salary is \$600,000. Based on the mean, median, and histogram, it is clear that some very highly paid players skew the mean upwards, while most players earned closer to the median value of \$600,000.
+We observe that the data is also skewed far to the left. From the summary table above, we see that the mean salary is \$2,120,866.95 while the median salary is \$600,000. Based on the mean, median, and histogram, it is clear that some very highly paid players skew the mean upwards, while most players earned closer to the median value of \$600,000.
 
 Similar to how playing stats will likely vary significantly between award winners & all other baseball players, it will be interesting to analyze how salary changes for players based on their playing stats and their award records. By plotting salary over time (right), we observe that the spread of the distribution of salary has increased each year. (Note there is not salary data before 1985 in this data set). 
 
@@ -87,8 +86,4 @@ plot(Lahman$bats, Lahman$H, xlab = "Batting hand", ylab = "Hits")
 
 Batting hand indicates which hand the player bats with - right, left, or both (switch-hitter). Note that for some players we do not have handedness but we do have hit data, which is why there is a box without a corresponding batting hand. While it appears there may not be a difference in salary, it appears there is more variance in number of hits based on batting hand. 
 
-Overall, we expect this to be a very interesting data set to explore with many interesting questions already emerging. Because our dataset includes all professional baseball players, it is not necessarily a sample describing a larger population. However, we can subset our data and analyze how that subset compares to the entire baseball poplulation. For example, as suggested above, we can analyze how playing statistics changes between those who have won awards versus the entire baseball population. There are similar questions we can ask with how salary changes with playing stats.
-
-
-
-
+Overall, we expect this to be a very interesting data set to explore with many interesting questions already emerging. Because our data set includes all professional baseball players, it is not necessarily a sample describing a larger population. However, we can subset our data and analyze how that subset compares to the entire baseball population. For example, as suggested above, we can analyze how playing statistics changes between those who have won awards versus the entire baseball population. There are similar questions we can ask with how salary changes with playing stats.
