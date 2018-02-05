@@ -1,0 +1,17 @@
+---
+title: "Statistical Linear Models Project 1"
+subtitle: "Math 158, Linear Models, Spring 2018"
+author: "Moira Dillon & Mike Adams"
+date: "Due: Monday, February 5, 2018"
+output: pdf_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+install.packages("Lahman")
+require(Lahman)
+```
+
+We will be analyzing The Lahman Baseball Database, available on R. This database includes pitching, hitting, and fielding stats for Major League Baseball from 1871 through 2016. This dataset is the largest available for baseball statistics. Specifically, this data set includes information on batting, pitching, fielding, all-star statistics, hall of fame, managers, teams, batting, pitching, and fielding in the post season, franchises, managers, salaries, awards, school history, in addition to a handful of other factors. 
+
