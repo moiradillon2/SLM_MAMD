@@ -10,6 +10,10 @@ output:
 
 ```{r, eval=TRUE, warning=FALSE}
 require(ggplot2)
+require(broom)
+require(dplyr)
+#install.packages("ggvis")
+require(ggvis)
 ```
 \section*{Introduction}
 
@@ -70,7 +74,7 @@ From the plot of the standardized vs fitted residuals, we observe that the resid
   geom_point() 
 ```
 
-When we transform the data using a square root transformation on both salary (explanatory) and games played (response), we observe that the relationship appears positive and linear. \textit{lowkey it almost could be negative also - not sure on this} Because of the high variation in salary, this transformation will reduce some of the extreme values. Transforming the response variable, games played, should result in residuals with more constant variance. Now we can redo linear regression using the transformed variables. However, we need to keep in mind that transforming X will give us a different relationship between X and Y, and transforming Y changes the variablity around the line.
+When we transform the data using a square root transformation on both salary (explanatory) and games played (response), we observe that the relationship appears linear. Because of the high variation in salary, this transformation will reduce some of the extreme values. Transforming the response variable, games played, should result in residuals with more constant variance. Now we can redo linear regression using the transformed variables. However, we need to keep in mind that transforming X will give us a different relationship between X and Y, and transforming Y changes the variablity around the line.
 
 We are still using linear regression to determine if there is a linear relationship between salary and number of games played, although now we are testing if there is a linear relationship between the square root of each of these variables.
 
@@ -93,50 +97,77 @@ Linear regression on the transformed data result in a residual plot which is mor
 summary(games_salary_lm_sqrt)
 ```
 
-For this linear model, the adjusted $R^2 = 0.06311$, which indicates how much of the response variable variation is explained by the linaer model. The standardized vs fitted residual plot shows more constant variance for the transformed data than the original data, but does not indicate a great linear model fit. While our $R^2$ value is low, we do observe a statistically significant predictor value (p-value < 2.2e-16). 
+For this linear model, the adjusted $R^2 = 0.06311$, which indicates how much of the response variable variation is explained by the linaer model. The standardized vs fitted residual plot shows more constant variance for the transformed data than the original data, but does not indicate a great linear model fit. While our $R^2$ value is low, we do observe a statistically significant predictor value (t=15.47, p-value < 2.2e-16).
+
+Because the p-value is so small, we can reject the null hypothesis that to model a linear relationship bewtween Salary and Games played the slope coefficient must be different from zero. This does not mean there is a causative relationship, just that the slope coefficient is different than zero.
 
 ## need to be careful about how we interpret this with square root 
-]
 
-For this linear regression we see that we have a p-value that is much less than 0.05, and so we reject the null hypothesis that Beta_1 is 0. There does seem to be a positive correleation between the two variables.
-
-
-We can compute the confidence interval for $\beta_1$ from the summary of the linear regression above. The confidence interval for the slope is the estimate coefficient for the square root of salary $\pm$ two standard errors. 
-
-95% CI for $\beta_1$: 7.902e-04 $\pm$ 5.106e-05 
-
-
-
-## this is how she compuete confidnece pred interval  -- i need to sleep lol 
-
+We can compute the confidence interval for $\beta_1$ from the summary of the linear regression above. The confidence interval for the slope is the estimate coefficient for the square root of salary $\pm$ two standard errors. We can also estimate it using broom():
 ```{r, eval=TRUE, warning=FALSE}
-newcredit <- data.frame(Limit=c(2000, 5000, 7000))
-crit_val <- qt(.975, glance(credit_lm)$df.resid)
-credit_pred <- augment(credit_lm, newdata=newcredit, type.predict = "response")
-# the SE of the predictions also include the overall variability of the model
-.se.pred <- sqrt(glance(credit_lm)$sigma^2 + credit_pred$.se.fit)
-credit_pred <- credit_pred %>%
-mutate(lower_PI = .fitted - crit_val * .se.pred,
-upper_PI = .fitted + crit_val * .se.pred,
-lower_CI = .fitted - crit_val * .se.fit,
-upper_CI = .fitted + crit_val * .se.fit)
-credit_pred
-```
-## for entire range of explanatory variables
-
-
-```{r, eval=TRUE, warning=FALSE}
-newcredit <- data.frame(Limit=c(2000, 5000, 7000))
-crit_val <- qt(.975, glance(credit_lm)$df.resid)
-credit_pred <- augment(credit_lm, newdata=newcredit, type.predict = "response")
-# the SE of the predictions also include the overall variability of the model
-.se.pred <- sqrt(glance(credit_lm)$sigma^2 + credit_pred$.se.fit)
-credit_pred <- credit_pred %>%
-mutate(lower_PI = .fitted - crit_val * .se.pred,
-upper_PI = .fitted + crit_val * .se.pred,
-lower_CI = .fitted - crit_val * .se.fit,
-upper_CI = .fitted + crit_val * .se.fit)
-credit_pred
+broom::tidy(games_salary_lm_sqrt, conf.int = TRUE, conf.level = 0.95)
 ```
 
+A 95% CI for $\beta_1$ is (0.0006900596,0.0008902871). 
+
+The linear regression line givs us our guess at the mean response for an individual particular value. When we plug in our estimators, we get a regression line of the following form as our fitted value:
+
+$$ \hat y_i = b_0 + b_1 x_i $$
+
+In order to create mean and prediction intervals in R, we need to create a new data set that has the same variable name as our predictor the value we are interetesd in.
+
+```{r, eval=TRUE, warning=FALSE}
+
+# New data set as predictor -- used 1stQ, Median, 3rdQ -- not sure if this should be with sqrt or not
+new_lahman <- data.frame(salary=c(347100, 550000, 2000000))
+new_lahman <- data.frame(salary=c(589.152, 741.619, 1,414.214))
+
+
+crit_val <- qt(0.975, glance(games_salary_lm_sqrt)$df.resid)
+lahman_pred <- augment(games_salary_lm_sqrt, newdata=new_lahman, type.predict="response")
+
+# the SE of the predictions also include the overall variability of the model
+.se.pred <- sqrt(glance(games_salary_lm_sqrt)$sigma^2 + lahman_pred$.se.fit)
+
+lahman_pred <- lahman_pred %>%
+  mutate(lower_PI = .fitted - crit_val * .se.pred,
+        upper_PI = .fitted + crit_val * .se.pred,
+        lower_CI = .fitted - crit_val * .se.fit,
+        upper_CI = .fitted + crit_val * .se.fit)
+
+lahman_pred
+```
+
+Here we have predictions for three players with a salary of $347100, $550000, and $2000000.
+
+We can also create intervals for the entire range of explanatory variables. To plot the CI and PI for all of the points, we need the standard error of the prediction (the salary).
+
+```{r, eval=TRUE, warning=FALSE}
+# compute interval for the entire range of explanatory variables
+lahman_gl <- broom::glance(games_salary_lm_sqrt)
+lahman_sig <- dplyr::pull(lahman_gl, sigma)
+
+lahman_pred <- broom::augment(games_salary_lm_sqrt) %>%
+  mutate(.se.pred = sqrt(lahman_sig^2 + .se.fit^2)) %>%
+  mutate(lower_PI = .fitted - crit_val*.se.pred,
+        upper_PI = .fitted + crit_val*.se.pred,
+        lower_CI = .fitted - crit_val * .se.fit,
+        upper_CI = .fitted + crit_val * .se.fit)
+
+ggplot(lahman_pred, aes(x = sqrt.salary., y = sqrt.G.)) + geom_point() + xlab("Salary (square root)") + ylab("Games played (square root)")+
+  stat_smooth(method = "lm", se = FALSE) +
+  geom_ribbon(aes(ymin = lower_PI, ymax = upper_PI), alpha = .2) +
+  geom_ribbon(data = lahman_pred, aes(ymin = lower_CI, ymax = upper_CI), alpha = .2, fill = "red")
+
+```
+
+On this plot, the red ribbon indicates the 95% confidence interval around the mean expected values, while the gray ribbon respresents the 95% confidence on the future predicted values.
+
+
+```{r, eval=TRUE, warning=FALSE}
+
+num_int <- 3
+crit_Bonf <- qt((1-.975)/num_int, glance(games_salary_lm_sqrt)$df.resid)
+crit_WH <- sqrt(2*qf(.95, num_int, glance(games_salary_lm_sqrt)$df.resid))
+```
 
