@@ -8,6 +8,9 @@ output:
        latex_engine: xelatex
 ---
 
+```{r, eval=TRUE, warning=FALSE}
+require(ggplot2)
+```
 \section*{Introduction}
 
 # Briefly refresh the reader’s mind as to the variables of interest
@@ -16,47 +19,124 @@ We are analyzing The Lahman Baseball Database, available on R. This database inc
 
 In order to analyze independent observational units, we will just be considering the last year of data for each player in the data set. Because each player shows up in the data set multiple times (multiple years playing professional baseball), the original data is not independent. However, by comparing variables using the last year of each player's career as the observational unit, the data is independent. 
 
-Additionally, we have subsetted the data further because of some missing entries. Batting statistics are not complete until 1955 and salary records do not begin until 1985. Additionally, there are a handful of missing values for each other variable. 
+We have subsetted the data further because of some missing entries. Batting statistics are not complete until 1955 and salary records do not begin until 1985. Additionally, there are a handful of missing values for each other variable. We used the function complete.cases() to filter out the values that were NA, and ultimately have 3,557 rows (players as observational units) remaining in the data base.
 
-using complete.cases() == filtered out all the NAs  -- down to 3557 rows
 
 \section*{Introduction}
 
 # The hypotheses that you’ll be addressing. It will probably be that the two variables are linearly related. (Positively? Negatively? Remember, R gives a two-sided p-value, but you can just as easily test that β1 > 0 or β1 < 0.)
 
-We will use linear regression to determine if there is a linear relationship between number of games played and salary (for the last year of each player's career). Our belief is that baseball clubs will likely want to play their higher salaried players in as many games as possible to make sure they are getting their worth, thus there will be a positive relationship between salary and games played.
+We will use linear regression to determine if there is a linear relationship between the number of games played and salary (for the last year of each player's career). Our belief is that baseball clubs will likely want to play their higher salaried players in as many games as possible to make sure they are getting their worth, thus there will be a positive relationship between salary and games played.
 
-This was the best two variables that we could find to perform a linear regression on, largely based on the fact that neither of theses statistics contains zero and therefore can be manipulated with a log transformation.
+We will be testing if there is a linear relationship between the explanatory variable (salary) and the response variable (games player):
 
-We transformed the data using a square root transformation on both salary (explanatory) and games played (response). The transformation was applied on salary to try and get rid of extreme values, it was applied on games played to give the residuals more constant variance. 
-```{r, eval=TRUE}
+  $H_0$: $\beta_1 = 0$
+  $H_a$: $\beta_1 \neq 0$
+
+While deciding which two variables to conduct linear regression with, we realized that many of the entries are zero, especially for the batting statistics. Because of this, it was challening to find data that was appropriate for linear regression, even after trying various transformations (log, square root, inverse, etc.). Salary and the number of games played both did not contain any entries of zero. 
+
+```{r, eval=TRUE, warning=FALSE}
 # data set of just last year of every player 
 filtered_lahman <- read.csv("Lahman_filtered.csv", header=TRUE)
-
 filtered_lahman <- filtered_lahman[complete.cases(filtered_lahman), ]
 
+#filtered_lahman %>%
+  ggplot(filtered_lahman, aes(x=(salary), y=(G)))  + xlab("Salary") + ylab("Number of games played") +
+  geom_point() 
+```
 
-gamesSalary_lm <- lm(sqrt(G)~sqrt(salary), data = filtered_lahman)
+Here we have a plot of number of games played versus salary. The observational unit is individual baseball players (stats taken from last year of their professional career). We see that there is a very high concentration of points along the left side of the plot, where salary is lower. 
 
-filtered_lahman %>%
-  ggplot(aes(x=sqrt(salary), y=sqrt(G)))  +
-  geom_point() +
+Games played and salary appear to have a linear relationship, although without a transformation it is not clear. We can plot standardized residuals vs fitted values to determine if the error is normal or not.
+
+```{r, eval=TRUE, warning=FALSE}
+
+# linear regression 
+games_salary_lm <- lm((G)~(salary), data = filtered_lahman)
+
+#games_salary_lm %>%
+  ggplot(games_salary_lm, aes(x=fitted(games_salary_lm), y=rstandard(games_salary_lm)))  +
+  geom_point()  + xlab("fitted residuals")  + ylab("standardized residuals")
   geom_smooth(method = "lm", se = FALSE)
 ```
 
-```{r, eval = TRUE, echo = FALSE}
-augment(gamesSalary_lm) %>%
-  ggplot(aes(x=.fitted, y=.resid)) +
-  geom_point() +
-  geom_hline(yintercept = 0)
+
+From the plot of the standardized vs fitted residuals, we observe that the residuals are not symmetric which indicates the error is non-normal. A transformation of the data should help with both the non-normal errors and the linearity of the relationship.
+
+
+```{r, eval=TRUE, warning=FALSE}
+#filtered_lahman %>%
+  ggplot(filtered_lahman,aes(x=sqrt(salary), y=sqrt(G)))  + xlab("Salary (square root)") + ylab("Number of games played (square root)") +
+  geom_point() 
 ```
 
-The R^2 value (see statistics below) for this regression is very low but the residual plots look ok, with mostly constant variance and not to much in the way of extreme values.
+When we transform the data using a square root transformation on both salary (explanatory) and games played (response), we observe that the relationship appears positive and linear. \textit{lowkey it almost could be negative also - not sure on this} Because of the high variation in salary, this transformation will reduce some of the extreme values. Transforming the response variable, games played, should result in residuals with more constant variance. Now we can redo linear regression using the transformed variables. However, we need to keep in mind that transforming X will give us a different relationship between X and Y, and transforming Y changes the variablity around the line.
 
-```{r, eval = TRUES, echo =FALSE}
-summary(gamesSalary_lm)
+We are still using linear regression to determine if there is a linear relationship between salary and number of games played, although now we are testing if there is a linear relationship between the square root of each of these variables.
+
+The null hypothesis remains: $\beta_1 = 0$, that is the slope of the linear regression model is zero. The alternative hypothesis is: $\beta_1 \neq 0$, or that the slope is not equal to zero. Rejecting the null hypothesis indicates there is a relationship between the two variables.
+
+
+```{r, eval=TRUE, warning=FALSE}
+# linear regression on transformed data
+games_salary_lm_sqrt <- lm(sqrt(G)~sqrt(salary), data = filtered_lahman)
+
+#games_salary_lm_sqrt %>%
+  ggplot(games_salary_lm_sqrt, aes(x=fitted(games_salary_lm_sqrt), y=rstandard(games_salary_lm_sqrt)))  +
+  geom_point() + xlab("fitted residuals")  + ylab("standardized residuals") +
+  geom_smooth(method = "lm", se = FALSE)
 ```
 
-.
+Linear regression on the transformed data result in a residual plot which is more symmetric, although there is still some variation in the errors. We can summarize the linear regression model to assess the fit of our model.  
+
+```{r, eval=TRUE, warning=FALSE}
+summary(games_salary_lm_sqrt)
+```
+
+For this linear model, the adjusted $R^2 = 0.06311$, which indicates how much of the response variable variation is explained by the linaer model. The standardized vs fitted residual plot shows more constant variance for the transformed data than the original data, but does not indicate a great linear model fit. While our $R^2$ value is low, we do observe a statistically significant predictor value (p-value < 2.2e-16). 
+
+## need to be careful about how we interpret this with square root 
+]
 
 For this linear regression we see that we have a p-value that is much less than 0.05, and so we reject the null hypothesis that Beta_1 is 0. There does seem to be a positive correleation between the two variables.
+
+
+We can compute the confidence interval for $\beta_1$ from the summary of the linear regression above. The confidence interval for the slope is the estimate coefficient for the square root of salary $\pm$ two standard errors. 
+
+95% CI for $\beta_1$: 7.902e-04 $\pm$ 5.106e-05 
+
+
+
+## this is how she compuete confidnece pred interval  -- i need to sleep lol 
+
+```{r, eval=TRUE, warning=FALSE}
+newcredit <- data.frame(Limit=c(2000, 5000, 7000))
+crit_val <- qt(.975, glance(credit_lm)$df.resid)
+credit_pred <- augment(credit_lm, newdata=newcredit, type.predict = "response")
+# the SE of the predictions also include the overall variability of the model
+.se.pred <- sqrt(glance(credit_lm)$sigma^2 + credit_pred$.se.fit)
+credit_pred <- credit_pred %>%
+mutate(lower_PI = .fitted - crit_val * .se.pred,
+upper_PI = .fitted + crit_val * .se.pred,
+lower_CI = .fitted - crit_val * .se.fit,
+upper_CI = .fitted + crit_val * .se.fit)
+credit_pred
+```
+## for entire range of explanatory variables
+
+
+```{r, eval=TRUE, warning=FALSE}
+newcredit <- data.frame(Limit=c(2000, 5000, 7000))
+crit_val <- qt(.975, glance(credit_lm)$df.resid)
+credit_pred <- augment(credit_lm, newdata=newcredit, type.predict = "response")
+# the SE of the predictions also include the overall variability of the model
+.se.pred <- sqrt(glance(credit_lm)$sigma^2 + credit_pred$.se.fit)
+credit_pred <- credit_pred %>%
+mutate(lower_PI = .fitted - crit_val * .se.pred,
+upper_PI = .fitted + crit_val * .se.pred,
+lower_CI = .fitted - crit_val * .se.fit,
+upper_CI = .fitted + crit_val * .se.fit)
+credit_pred
+```
+
+
