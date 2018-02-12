@@ -1,13 +1,12 @@
 ---
-title: "Statistical Linear Models Project 2"
-subtitle: "Math 158, Linear Models, Spring 2018"
+title: |
+ | \vspace{0.5cm} \Large{Statistical Linear Models Project 2}
 author: "Moira Dillon & Mike Adams"
 date: "Due: Monday, February 12, 2018"
 output:
    pdf_document:
        latex_engine: xelatex
 ---
-
 ```{r, eval=TRUE, warning=FALSE, echo=FALSE, message=FALSE}
 require(ggplot2)
 require(broom)
@@ -20,89 +19,45 @@ require(gridExtra)
 require(robustbase)
 require(ggvis)
 ```
-\section*{Project Recap}
 
-We are analyzing The Lahman Baseball Database, available on R. This database includes pitching, hitting, and fielding stats for Major League Baseball from 1871 through 2016. We will be analyzing players salaries, awards, statistics for batting & fielding during regular and post season, along with their birth date, height, weight, playing hand, and birth country.
+We are analyzing The Lahman Baseball Database, available on R. This database includes pitching, hitting, and fielding stats for Major League Baseball from 1871 through 2016. We will be analyzing players salaries, awards, statistics for batting & fielding during regular and post season, along with their birth date, height, weight, playing hand, and birth country. Because each player shows up in the data set multiple times (multiple years playing professional baseball), the original data is not independent. In order to analyze independent observational units, we will just be considering the last year of data for each player in the data set. We have further subsetted the data because of some missing entries. Batting statistics are not complete until 1955 and salary records do not begin until 1985. Additionally, there are a handful of missing values some of the other variable. We used the function complete.cases() to filter out the values that were NA, and ultimately have 3,557 rows (players as observational units) remaining in the data base. While deciding which two variables to conduct linear regression with, we realized that many of the entries are zero, especially for the batting statistics. Because of this, it was challenging to find data that was appropriate for linear regression, even after trying various transformations (log, square root, inverse, etc.). Salary and the number of games played both did not contain any entries of zero. 
 
-In order to analyze independent observational units, we will just be considering the last year of data for each player in the data set. Because each player shows up in the data set multiple times (multiple years playing professional baseball), the original data is not independent. However, by comparing variables using the last year of each player's career as the observational unit, the data is independent. 
-
-We have subsetted the data further because of some missing entries. Batting statistics are not complete until 1955 and salary records do not begin until 1985. Additionally, there are a handful of missing values for each other variable. We used the function complete.cases() to filter out the values that were NA, and ultimately have 3,557 rows (players as observational units) remaining in the data base.
-
-
-\section*{Introduction}
-
-We will use linear regression to determine if there is a linear relationship between the number of games played and salary (for the last year of each player's career). Our belief is that baseball clubs will likely want to play their higher salaried players in as many games as possible to make sure they are getting their worth, thus there will be a positive relationship between salary and games played.
-
-We will be testing if there is a linear relationship between the explanatory variable (salary) and the response variable (games player):
-
-  $H_0$: $\beta_1 = 0$
-  $H_a$: $\beta_1 \neq 0$
-
-While deciding which two variables to conduct linear regression with, we realized that many of the entries are zero, especially for the batting statistics. Because of this, it was challening to find data that was appropriate for linear regression, even after trying various transformations (log, square root, inverse, etc.). Salary and the number of games played both did not contain any entries of zero. 
-
-```{r, eval=TRUE, warning=FALSE}
-# data set of just last year of every player 
+```{r, eval=TRUE, warning=FALSE, fig.height=2.5, fig.width=5}
+# data set of just last year of every player - available on git
 filtered_lahman <- read.csv("Lahman_filtered.csv", header=TRUE)
 filtered_lahman <- filtered_lahman[complete.cases(filtered_lahman), ]
-
-#filtered_lahman %>%
-  ggplot(filtered_lahman, aes(x=(salary), y=(G)))  + xlab("Salary") + ylab("Number of games played") +
-  geom_point() 
 ```
 
-Here we have a plot of number of games played versus salary. The observational unit is individual baseball players (stats taken from last year of their professional career). We see that there is a very high concentration of points along the left side of the plot, where salary is lower. 
+We will use linear regression to determine if there is a linear relationship between the number of games played and salary earned (for the last year of each player's career). We will test the following null and alternative hypotheses $H_0$: $\beta_1 = 0$ and $H_a$: $\beta_1 \neq 0$. The null hypothesis states the slope of the linear relationship is zero, or that there is not a relationship. 
 
-Games played and salary appear to have a linear relationship, although without a transformation it is not clear. We can plot standardized residuals vs fitted values to determine if the error is normal or not.
-
-```{r, eval=TRUE, warning=FALSE}
-
-# linear regression 
+```{r, eval=TRUE, warning=FALSE, fig.height=2.5, fig.width=5}
 games_salary_lm <- lm((G)~(salary), data = filtered_lahman)
-
-#games_salary_lm %>%
-  ggplot(games_salary_lm, aes(x=fitted(games_salary_lm), y=rstandard(games_salary_lm)))  +
-  geom_point()  + xlab("fitted residuals")  + ylab("standardized residuals")
-  geom_smooth(method = "lm", se = FALSE)
 ```
 
+The left plot below shows the number of games played versus salary. The observational unit is individual baseball players. We see that there is a very high concentration of points along the left side of the plot, where salary is lower. The relationship between games and salary is not clear, so we will transform the data. We will first plot standardized residuals vs fitted values to determine if the error is normal or not. On the right we plot the standardized vs fitted residuals. We observe that the residuals are not symmetric which indicates the error is non-normal. A transformation of the data should help with both the non-normal errors and the linearity of the relationship.
 
-From the plot of the standardized vs fitted residuals, we observe that the residuals are not symmetric which indicates the error is non-normal. A transformation of the data should help with both the non-normal errors and the linearity of the relationship.
-
-
-```{r, eval=TRUE, warning=FALSE}
-#filtered_lahman %>%
-  ggplot(filtered_lahman,aes(x=sqrt(salary), y=sqrt(G)))  + xlab("Salary (square root)") + ylab("Number of games played (square root)") +
-  geom_point() 
+```{r, eval=TRUE, warning=FALSE, fig.height=2.5, fig.width=5}
+linear_plot <- ggplot(filtered_lahman, aes(x=(salary), y=(G)))  + xlab("Salary") + ylab("Number of games played") + geom_point(size=0.03, shape=1) 
+resids <- ggplot(games_salary_lm, aes(x=fitted(games_salary_lm), y=rstandard(games_salary_lm))) +geom_point(size=0.03, shape=1) + xlab("fitted residuals")  + ylab("standardized residuals") + geom_smooth(method = "lm", se = FALSE)
+grid.arrange(linear_plot, resids, ncol=2)
 ```
 
-When we transform the data using a square root transformation on both salary (explanatory) and games played (response), we observe that the relationship appears linear. Because of the high variation in salary, this transformation will reduce some of the extreme values. Transforming the response variable, games played, should result in residuals with more constant variance. Now we can redo linear regression using the transformed variables. However, we need to keep in mind that transforming X will give us a different relationship between X and Y, and transforming Y changes the variablity around the line.
+When we transform the data using a square root transformation on both salary (explanatory) and games played (response), we observe that the relationship appears more linear (left plot below). Because of the high variation in salary, this transformation will reduce some of the extreme values. Transforming the response variable, games played, should result in residuals with more constant variance. Now we can redo linear regression using the transformed variables. However, we need to keep in mind that transforming X will give us a different relationship between X and Y, and transforming Y changes the variability around the line. Now when we conduct linear regression we are testing if there is a linear relationship between the square root of each of these variables. The null and alternative hypothesis remain the same. Linear regression on the transformed data result in a residual plot which is more symmetric (right plot below), although there is still some variation in the errors. We can summarize the linear regression model to assess the fit of our model.  
 
-We are still using linear regression to determine if there is a linear relationship between salary and number of games played, although now we are testing if there is a linear relationship between the square root of each of these variables.
-
-The null hypothesis remains: $\beta_1 = 0$, that is the slope of the linear regression model is zero. The alternative hypothesis is: $\beta_1 \neq 0$, or that the slope is not equal to zero. Rejecting the null hypothesis indicates there is a relationship between the two variables.
-
-
-```{r, eval=TRUE, warning=FALSE}
+```{r, eval=TRUE, warning=FALSE, fig.height=2.5, fig.width=5}
+sqrt <- ggplot(filtered_lahman,aes(x=sqrt(salary), y=sqrt(G)))  + xlab("Salary (square root)") + ylab("Number of games played (square root)") +
+geom_point(size=0.03, shape=1)  
 # linear regression on transformed data
 games_salary_lm_sqrt <- lm(sqrt(G)~sqrt(salary), data = filtered_lahman)
-
-#games_salary_lm_sqrt %>%
-  ggplot(games_salary_lm_sqrt, aes(x=fitted(games_salary_lm_sqrt), y=rstandard(games_salary_lm_sqrt)))  +
-  geom_point() + xlab("fitted residuals")  + ylab("standardized residuals") +
-  geom_smooth(method = "lm", se = FALSE)
+sqrt_lm <- ggplot(games_salary_lm_sqrt, aes(x=fitted(games_salary_lm_sqrt), y=rstandard(games_salary_lm_sqrt)))+geom_point(size=0.03, shape=1) + xlab("fitted residuals")  + ylab("standardized residuals") + geom_smooth(method = "lm", se = FALSE)
+grid.arrange(sqrt, sqrt_lm, ncol=2)
 ```
-
-Linear regression on the transformed data result in a residual plot which is more symmetric, although there is still some variation in the errors. We can summarize the linear regression model to assess the fit of our model.  
 
 ```{r, eval=TRUE, warning=FALSE, echo=FALSE}
 summary(games_salary_lm_sqrt)
 ```
 
-For this linear model, the adjusted $R^2 = 0.06311$, which indicates how much of the response variable variation is explained by the linaer model. The standardized vs fitted residual plot shows more constant variance for the transformed data than the original data, but does not indicate a great linear model fit. While our $R^2$ value is low, we do observe a statistically significant predictor value (t=15.47, p-value < 2.2e-16).
-
-Because the p-value is so small, we can reject the null hypothesis that to model a linear relationship bewtween Salary and Games played the slope coefficient must be different from zero. This does not mean there is a causative relationship, just that the slope coefficient is different than zero.
-
-## need to be careful about how we interpret this with square root 
+For this linear model, the adjusted $R^2 = 0.06311$, which indicates how much of the response variable variation is explained by the linear model. The standardized vs fitted residual plot shows more constant variance for the transformed data than the original data, but does not indicate a great linear model fit. While our $R^2$ value is low, we do observe a statistically significant predictor value (t=15.47, p-value < 2.2e-16). Because the p-value is so small, we can reject the null hypothesis that the slope coefficient of the linear relationship between salary and games played is zero. This does not mean there is a causative relationship, just that the slope coefficient is different than zero. Because of the transformation, we need to be careful how we interpret this data. By rejecting the null hypothesis, we conclude that the slope of the linear model is not equal to zero. Because the linear model is not a fit of the original data, but is instead of the square root of games played as a response to square root of salary, we conclude that the slop of this relationship is not equal to zero.
 
 We can compute the confidence interval for $\beta_1$ from the summary of the linear regression above. The confidence interval for the slope is the estimate coefficient for the square root of salary $\pm$ two standard errors. We can also estimate it using broom():
 
@@ -110,125 +65,89 @@ We can compute the confidence interval for $\beta_1$ from the summary of the lin
 broom::tidy(games_salary_lm_sqrt, conf.int = TRUE, conf.level = 0.95)
 ```
 
-A 95% CI for $\beta_1$ is (0.0006900596,0.0008902871). 
+A 95% CI for $\beta_1$ is (0.0006900596,0.0008902871). Because we used a square root transformation, we are 95% confident that the median of the square root of number of games played at the square root of salary is between this CI, indicating we are 95% confident that the median of games played at a certain salary is between our CI$^2$.
 
-The linear regression line givs us our guess at the mean response for an individual particular value. When we plug in our estimators, we get a regression line of the following form as our fitted value:
-
+The linear regression line gives us our guess at the mean response for an individual particular value. When we plug in our estimators, we get a regression line of the following form as our fitted value:
 $$ \hat y_i = b_0 + b_1 x_i $$
+In order to create mean and prediction intervals in R, we need to create a new data set that has the same variable name as our predictor the value we are interested in. This new data set is the square root of the 1st quartile, median, and third quartile salary values of the original data. 
 
-In order to create mean and prediction intervals in R, we need to create a new data set that has the same variable name as our predictor the value we are interetesd in.
-
-```{r, eval=TRUE, warning=FALSE}
-
-# New data set as predictor -- used sqrt(1stQ), sqrt(Median), sqrt(3rdQ) -- not sure if this should be with sqrt or not
+```{r, eval=TRUE, warning=FALSE, fig.height=2.5, fig.width=5}
+# New data set as predictor -- used sqrt(1stQ), sqrt(Median), sqrt(3rdQ) 
 new_lahman <- data.frame(salary=c(589.152, 741.619, 1,414.214))
-
-
 crit_val <- qt(0.975, glance(games_salary_lm_sqrt)$df.resid)
 lahman_pred <- augment(games_salary_lm_sqrt, newdata=new_lahman, type.predict="response")
-
 # the SE of the predictions also include the overall variability of the model
 .se.pred <- sqrt(glance(games_salary_lm_sqrt)$sigma^2 + lahman_pred$.se.fit)
-
 lahman_pred <- lahman_pred %>%
   mutate(lower_PI = .fitted - crit_val * .se.pred,
         upper_PI = .fitted + crit_val * .se.pred,
         lower_CI = .fitted - crit_val * .se.fit,
         upper_CI = .fitted + crit_val * .se.fit)
-
 lahman_pred
 ```
-
-Here we have predictions for three players with a salary of $347100, $550000, and $2000000.
-
-We can also create intervals for the entire range of explanatory variables. To plot the CI and PI for all of the points, we need the standard error of the prediction (the salary).
-
-```{r, eval=TRUE, warning=FALSE}
+Here we have predictions for three players with a salary of \$347100, \$550000, and \$2000000. We can also create intervals for the entire range of explanatory variables. To plot the CI and PI for all of the points, we need the standard error of the prediction (the salary).
+```{r, eval=TRUE, warning=FALSE, fig.height=2.5, fig.width=2.5}
 # compute interval for the entire range of explanatory variables
 lahman_gl <- broom::glance(games_salary_lm_sqrt)
 lahman_sig <- dplyr::pull(lahman_gl, sigma)
-
 lahman_pred <- broom::augment(games_salary_lm_sqrt) %>%
   mutate(.se.pred = sqrt(lahman_sig^2 + .se.fit^2)) %>%
   mutate(lower_PI = .fitted - crit_val*.se.pred,
         upper_PI = .fitted + crit_val*.se.pred,
         lower_CI = .fitted - crit_val * .se.fit,
         upper_CI = .fitted + crit_val * .se.fit)
-
-ggplot(lahman_pred, aes(x = sqrt.salary., y = sqrt.G.)) + geom_point() + xlab("Salary (square root)") + ylab("Games played (square root)")+
-  stat_smooth(method = "lm", se = FALSE) +
-  geom_ribbon(aes(ymin = lower_PI, ymax = upper_PI), alpha = .2) +
-  geom_ribbon(data = lahman_pred, aes(ymin = lower_CI, ymax = upper_CI), alpha = .2, fill = "red")
-
+ggplot(lahman_pred, aes(x = sqrt.salary., y = sqrt.G.)) + geom_point(size=0.03, shape=1) + xlab("Salary (square root)") + ylab("Games played (square root)")+ stat_smooth(method = "lm", se = FALSE) + geom_ribbon(aes(ymin = lower_PI, ymax = upper_PI), alpha = .2) + geom_ribbon(data = lahman_pred, aes(ymin = lower_CI, ymax = upper_CI), alpha = .2, fill = "red")
 ```
+On this plot, the black line is the mean expected value, the red ribbon indicates the 95% confidence interval around the mean expected values, while the gray ribbon represents the 95% confidence on the future predicted values. We can also create 3 bands for mean intervals for the $n$ points, creating simultaneous intervals for no adjustment, Bonferroni, and Working-Hotelling.
 
-On this plot, the red ribbon indicates the 95% confidence interval around the mean expected values, while the gray ribbon respresents the 95% confidence on the future predicted values.
-
-We can create 3 bands for mean intervals for the $n$ points, creating simultaneous intervals for no adjustment, Bonferroni, and Working-Hotelling.
-
-Plot 3 bands (preferably using ggplot) for mean intervals (i.e., the line) for the n points. (No
-adjustment, Bonferroni, and Working-Hotelling.)
-
-
-```{r, eval=TRUE, warning=FALSE}
-num_int <- 3
-
+```{r, eval=TRUE, warning=FALSE, fig.height=2.5, fig.width=2.5}
 # critical values for Bonf and WH test statistics
+num_int <- 3
 crit_Bonf <- qt((1-.975)/num_int, glance(games_salary_lm_sqrt)$df.resid)
 crit_WH <- sqrt(2*qf(.95, num_int, glance(games_salary_lm_sqrt)$df.resid))
-
-fitted <- games_salary_lm_sqrt$fitted.values
-# from summary of lm above
-se <- 5.106e-05
-
 # confidence intervals for WH
-WH.upper <- fitted + crit_WH * se
-WH.lower <- fitted - crit_WH * se
-
+WH.upper <- lahman_pred$.fitted + crit_WH * lahman_pred$.se.fit
+WH.lower <- lahman_pred$.fitted - crit_WH * lahman_pred$.se.fit
 # confidence intervals for Bonf
-Bonf.upper <- fitted + crit_Bonf * se
-Bonf.lower <- fitted - crit_Bonf * se
-
-# plot WH intervals
-#wh <- ggplot(lahman_pred, aes(x = sqrt.salary., y = sqrt.G.)) + 
-#    geom_point(size=2.5) + 
-#    geom_line(aes(y=fitted, x=sqrt.salary.), size=1) + 
-#    geom_line(aes(x=sqrt.salary., y=WH.upper), colour='blue', linetype='dashed', size=1) + 
-#    geom_line(aes(x=sqrt.salary., WH.lower), colour='blue', linetype='dashed', size=1) +
-#    labs(title='Working-Hotelling') 
-
-# Plot the Bonferroni intervals
-#bonn <- 
-#ggplot(lahman_pred, aes(x = sqrt.salary., y = sqrt.G.)) + 
-#    geom_point(size=2.5) + 
-#    geom_line(aes(y=fitted, x=sqrt.salary.), size=1) + 
-#    geom_line(aes(x=sqrt.salary., y=Bonf.upper), colour='blue', linetype='dashed', size=1) + 
-#    geom_line(aes(x=sqrt.salary., Bonf.lower), colour='blue', linetype='dashed', size=1) +
-#    labs(title='Bonferroni')
-  
-#grid.arrange(wh, bonn, ncol = 2)
-ggplot(lahman_pred, aes(x=sqrt.salary., y = sqrt.G.)) + geom_point(size=1, shape=1) +
-  geom_line(aes(y=fitted, x=sqrt.salary.), size = 1) + 
+Bonf.upper <- lahman_pred$.fitted  + crit_Bonf * lahman_pred$.se.fit
+Bonf.lower <- lahman_pred$.fitted  - crit_Bonf * lahman_pred$.se.fit
+ggplot(lahman_pred, aes(x=sqrt.salary., y = sqrt.G.)) + geom_point(size=0.03, shape=1) +
+  geom_line(aes(y=.fitted, x=sqrt.salary.), size = 1) + 
   geom_ribbon(data = lahman_pred, aes(ymin = WH.lower, ymax=WH.upper), alpha = .2, fill = "red") +
   geom_line(aes(x = sqrt.salary., y = Bonf.lower), colour = 'blue', linetype='dashed', size=1) +
   geom_line(aes(x = sqrt.salary., y = Bonf.upper), colour = 'blue', linetype='dashed', size=1) +
-  labs(title = 'Mean intervals')
-  
-  
+  labs(title = 'Mean intervals') +xlab("salary (square root)")+ylab("games (square root)")
 ```
 
+On this plot, the black line is the mean expected value, the red ribbon indicates the Working-Hotelling mean interval around the mean expected value, while the blue dotted lines indicate the Bonferroni mean interval. For this method, we observe that the Working-Hotelling mean interval and the the Bonferroni mean interval are very close to each other, the absolute value for the critical values for these two intervals were 2.39 and 2.28 respectively. Thus, for this method either the Working-Hotelling mean interval or the Bonferroni mean interval are more useful for communicating results. Now we can plot the prediction intervals for the $n$ points: no adjustment, Bonferroni, and Scheffes. First we calculate the critical value for Scheffe procedure.
 
-
-Plot 3 bands (preferably using ggplot) for prediction intervals (i.e., the points) for the n
-points. (No adjustment, Bonferroni, and Scheff´e.)
-
-```{r, eval=TRUE, warning=FALSE}
-#Using the values for bonf_crit and WH_crit we calculated in the previous chunk
-#Prediction intervals for WH
-#WH.upper.pred <- fitted + crit_Schef * se.pred
-#WH.lower.pred <- fitted - crit_Schef * se.pred
-#Prediction intervals for Bonf
-#Bonf.lower.pred <- fitted + crit_Bonf * se.pred
-#Bonf.upper.pred <- fitted - crit_Bonf * se.pred
+```{r, eval=TRUE, fig.height=2.5, fig.width=2.5}
+# cutoff value for alpha=0.05, num_int=3, df = n-2
+cutoff <- qf(.95, df1=num_int, df2=3557-2)
+# critical values for Scheffe test --  plug in square root of crit value for prediction interval
+crit_val_S2 <- num_int*cutoff
+crit_S <- sqrt(crit_val_S2)
+# prediction intervals for Bonferroni
+Bonf.upper <- lahman_pred$.fitted + crit_Bonf * lahman_pred$.se.pred
+Bonf.lower <- lahman_pred$.fitted - crit_Bonf * lahman_pred$.se.pred
+# prediction intervals for Scheffe
+S.upper <- lahman_pred$.fitted  + crit_S * lahman_pred$.se.pred
+S.lower <- lahman_pred$.fitted  - crit_S * lahman_pred$.se.pred
 ```
+<div style= "float:right;position: relative; top: -80px;">
+```{r, eval=TRUE, fig.height=2.5, fig.width=2.5}
+
+ggplot(lahman_pred, aes(x=sqrt.salary., y = sqrt.G.)) + geom_point(size=0.03, shape=1) +
+  geom_line(aes(y=.fitted, x=sqrt.salary.), size = 1) + 
+  geom_ribbon(data = lahman_pred, aes(ymin = S.lower, ymax=S.upper), alpha = .2, fill = "red") +
+  geom_line(aes(x = sqrt.salary., y = Bonf.lower), colour = 'blue', linetype='dashed', size=1) +
+  geom_line(aes(x = sqrt.salary., y = Bonf.upper), colour = 'blue', linetype='dashed', size=1) +
+  labs(title = 'Mean intervals') +xlab("salary (square root)")+ylab("games (square root)")
+```
+<div>
+On this plot, the black line is the mean expected value, the red ribbon indicates the Scheffe prediction interval, while the blue dotted lines indicate the Bonferroni prediction interval. For this method, the Bonferroni prediction interval is most useful for communicating results, as the Scheffe prediction interval extends beyond the maximum and minimum fitted values for the square root of the number of games played.
+
+
+
+
 
