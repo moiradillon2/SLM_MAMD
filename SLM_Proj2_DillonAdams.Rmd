@@ -8,7 +8,7 @@ output:
        latex_engine: xelatex
 ---
 
-```{r, eval=TRUE, warning=FALSE}
+```{r, eval=TRUE, warning=FALSE, echo=FALSE, message=FALSE}
 require(ggplot2)
 require(broom)
 require(dplyr)
@@ -20,9 +20,7 @@ require(gridExtra)
 require(robustbase)
 require(ggvis)
 ```
-\section*{Introduction}
-
-# Briefly refresh the reader’s mind as to the variables of interest
+\section*{Project Recap}
 
 We are analyzing The Lahman Baseball Database, available on R. This database includes pitching, hitting, and fielding stats for Major League Baseball from 1871 through 2016. We will be analyzing players salaries, awards, statistics for batting & fielding during regular and post season, along with their birth date, height, weight, playing hand, and birth country.
 
@@ -32,8 +30,6 @@ We have subsetted the data further because of some missing entries. Batting stat
 
 
 \section*{Introduction}
-
-# The hypotheses that you’ll be addressing. It will probably be that the two variables are linearly related. (Positively? Negatively? Remember, R gives a two-sided p-value, but you can just as easily test that β1 > 0 or β1 < 0.)
 
 We will use linear regression to determine if there is a linear relationship between the number of games played and salary (for the last year of each player's career). Our belief is that baseball clubs will likely want to play their higher salaried players in as many games as possible to make sure they are getting their worth, thus there will be a positive relationship between salary and games played.
 
@@ -98,7 +94,7 @@ games_salary_lm_sqrt <- lm(sqrt(G)~sqrt(salary), data = filtered_lahman)
 
 Linear regression on the transformed data result in a residual plot which is more symmetric, although there is still some variation in the errors. We can summarize the linear regression model to assess the fit of our model.  
 
-```{r, eval=TRUE, warning=FALSE}
+```{r, eval=TRUE, warning=FALSE, echo=FALSE}
 summary(games_salary_lm_sqrt)
 ```
 
@@ -124,8 +120,7 @@ In order to create mean and prediction intervals in R, we need to create a new d
 
 ```{r, eval=TRUE, warning=FALSE}
 
-# New data set as predictor -- used 1stQ, Median, 3rdQ -- not sure if this should be with sqrt or not
-new_lahman <- data.frame(salary=c(347100, 550000, 2000000))
+# New data set as predictor -- used sqrt(1stQ), sqrt(Median), sqrt(3rdQ) -- not sure if this should be with sqrt or not
 new_lahman <- data.frame(salary=c(589.152, 741.619, 1,414.214))
 
 
@@ -184,7 +179,7 @@ crit_WH <- sqrt(2*qf(.95, num_int, glance(games_salary_lm_sqrt)$df.resid))
 
 fitted <- games_salary_lm_sqrt$fitted.values
 # from summary of lm above
-se <- 7.462e-02
+se <- 5.106e-05
 
 # confidence intervals for WH
 WH.upper <- fitted + crit_WH * se
@@ -195,27 +190,45 @@ Bonf.upper <- fitted + crit_Bonf * se
 Bonf.lower <- fitted - crit_Bonf * se
 
 # plot WH intervals
-wh <- ggplot(lahman_pred, aes(x = sqrt.salary., y = sqrt.G.)) + 
-    geom_point(size=2.5) + 
-    geom_line(aes(y=fitted, x=sqrt.salary.), size=1) + 
-    geom_line(aes(x=sqrt.salary., y=WH.upper), colour='blue', linetype='dashed', size=1) + 
-    geom_line(aes(x=sqrt.salary., WH.lower), colour='blue', linetype='dashed', size=1) +
-    labs(title='Working-Hotelling') 
+#wh <- ggplot(lahman_pred, aes(x = sqrt.salary., y = sqrt.G.)) + 
+#    geom_point(size=2.5) + 
+#    geom_line(aes(y=fitted, x=sqrt.salary.), size=1) + 
+#    geom_line(aes(x=sqrt.salary., y=WH.upper), colour='blue', linetype='dashed', size=1) + 
+#    geom_line(aes(x=sqrt.salary., WH.lower), colour='blue', linetype='dashed', size=1) +
+#    labs(title='Working-Hotelling') 
 
 # Plot the Bonferroni intervals
-bonn <- ggplot(lahman_pred, aes(x = sqrt.salary., y = sqrt.G.)) + 
-    geom_point(size=2.5) + 
-    geom_line(aes(y=fitted, x=sqrt.salary.), size=1) + 
-    geom_line(aes(x=sqrt.salary., y=Bonf.upper), colour='blue', linetype='dashed', size=1) + 
-    geom_line(aes(x=sqrt.salary., Bonf.lower), colour='blue', linetype='dashed', size=1) +
-    labs(title='Bonferroni')
+#bonn <- 
+#ggplot(lahman_pred, aes(x = sqrt.salary., y = sqrt.G.)) + 
+#    geom_point(size=2.5) + 
+#    geom_line(aes(y=fitted, x=sqrt.salary.), size=1) + 
+#    geom_line(aes(x=sqrt.salary., y=Bonf.upper), colour='blue', linetype='dashed', size=1) + 
+#    geom_line(aes(x=sqrt.salary., Bonf.lower), colour='blue', linetype='dashed', size=1) +
+#    labs(title='Bonferroni')
   
-grid.arrange(wh, bonn, ncol = 2)
+#grid.arrange(wh, bonn, ncol = 2)
+ggplot(lahman_pred, aes(x=sqrt.salary., y = sqrt.G.)) + geom_point(size=1, shape=1) +
+  geom_line(aes(y=fitted, x=sqrt.salary.), size = 1) + 
+  geom_ribbon(data = lahman_pred, aes(ymin = WH.lower, ymax=WH.upper), alpha = .2, fill = "red") +
+  geom_line(aes(x = sqrt.salary., y = Bonf.lower), colour = 'blue', linetype='dashed', size=1) +
+  geom_line(aes(x = sqrt.salary., y = Bonf.upper), colour = 'blue', linetype='dashed', size=1) +
+  labs(title = 'Mean intervals')
   
   
 ```
 
 
+
 Plot 3 bands (preferably using ggplot) for prediction intervals (i.e., the points) for the n
 points. (No adjustment, Bonferroni, and Scheff´e.)
+
+```{r, eval=TRUE, warning=FALSE}
+#Using the values for bonf_crit and WH_crit we calculated in the previous chunk
+#Prediction intervals for WH
+#WH.upper.pred <- fitted + crit_Schef * se.pred
+#WH.lower.pred <- fitted - crit_Schef * se.pred
+#Prediction intervals for Bonf
+#Bonf.lower.pred <- fitted + crit_Bonf * se.pred
+#Bonf.upper.pred <- fitted - crit_Bonf * se.pred
+```
 
