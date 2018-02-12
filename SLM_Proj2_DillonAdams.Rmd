@@ -1,0 +1,62 @@
+---
+title: "Statistical Linear Models Project 2"
+subtitle: "Math 158, Linear Models, Spring 2018"
+author: "Moira Dillon & Mike Adams"
+date: "Due: Monday, February 12, 2018"
+output:
+   pdf_document:
+       latex_engine: xelatex
+---
+
+\section*{Introduction}
+
+# Briefly refresh the reader’s mind as to the variables of interest
+
+We are analyzing The Lahman Baseball Database, available on R. This database includes pitching, hitting, and fielding stats for Major League Baseball from 1871 through 2016. We will be analyzing players salaries, awards, statistics for batting & fielding during regular and post season, along with their birth date, height, weight, playing hand, and birth country.
+
+In order to analyze independent observational units, we will just be considering the last year of data for each player in the data set. Because each player shows up in the data set multiple times (multiple years playing professional baseball), the original data is not independent. However, by comparing variables using the last year of each player's career as the observational unit, the data is independent. 
+
+Additionally, we have subsetted the data further because of some missing entries. Batting statistics are not complete until 1955 and salary records do not begin until 1985. Additionally, there are a handful of missing values for each other variable. 
+
+using complete.cases() == filtered out all the NAs  -- down to 3557 rows
+
+\section*{Introduction}
+
+# The hypotheses that you’ll be addressing. It will probably be that the two variables are linearly related. (Positively? Negatively? Remember, R gives a two-sided p-value, but you can just as easily test that β1 > 0 or β1 < 0.)
+
+We will use linear regression to determine if there is a linear relationship between number of games played and salary (for the last year of each player's career). Our belief is that baseball clubs will likely want to play their higher salaried players in as many games as possible to make sure they are getting their worth, thus there will be a positive relationship between salary and games played.
+
+This was the best two variables that we could find to perform a linear regression on, largely based on the fact that neither of theses statistics contains zero and therefore can be manipulated with a log transformation.
+
+We transformed the data using a square root transformation on both salary (explanatory) and games played (response). The transformation was applied on salary to try and get rid of extreme values, it was applied on games played to give the residuals more constant variance. 
+```{r, eval=TRUE}
+# data set of just last year of every player 
+filtered_lahman <- read.csv("Lahman_filtered.csv", header=TRUE)
+
+filtered_lahman <- filtered_lahman[complete.cases(filtered_lahman), ]
+
+
+gamesSalary_lm <- lm(sqrt(G)~sqrt(salary), data = filtered_lahman)
+
+filtered_lahman %>%
+  ggplot(aes(x=sqrt(salary), y=sqrt(G)))  +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r, eval = TRUE, echo = FALSE}
+augment(gamesSalary_lm) %>%
+  ggplot(aes(x=.fitted, y=.resid)) +
+  geom_point() +
+  geom_hline(yintercept = 0)
+```
+
+The R^2 value (see statistics below) for this regression is very low but the residual plots look ok, with mostly constant variance and not to much in the way of extreme values.
+
+```{r, eval = TRUES, echo =FALSE}
+summary(gamesSalary_lm)
+```
+
+.
+
+For this linear regression we see that we have a p-value that is much less than 0.05, and so we reject the null hypothesis that Beta_1 is 0. There does seem to be a positive correleation between the two variables.
