@@ -1,0 +1,23 @@
+---
+title: "Statistical Linear Models Project 2"
+subtitle: "Math 158, Linear Models, Spring 2018"
+author: "Moira Dillon & Mike Adams"
+date: "Due: Monday, February 12, 2018"
+output:
+   pdf_document:
+       latex_engine: xelatex
+---
+
+
+\section*{Introduction}
+
+# Briefly refresh the reader’s mind as to the variables of interest
+
+We are analyzing The Lahman Baseball Database, available on R. This database includes pitching, hitting, and fielding stats for Major League Baseball from 1871 through 2016. We will be analyzing players salaries, awards, statistics for batting & fielding during regular and post season, along with their birth date, height, weight, playing hand, and birth country.
+
+In order to analyze independent observational units, we will just be considering the first year of data for each player in the data set. Because each player shows up in the data set multiple times (multiple years playing professional baseball), the original data is not independent. However, by comparing variables using the first year of each player's career as the observational unit, the data is independent. 
+
+Additionally, we have subsetted the data further because of some missing entries. Batting statistics are not complete until 1955 and salary records do not begin until 1985. We will only be analyzing the data set from 1985-2016 and only considering the first year of each player's career. While we have subseted the data, we still have 6000 observational units. 
+
+
+While there are various analyses we will be able to conduct, there are a few in particular we are looking forward to. We are interested in the relationship between playing statistics (batting & fielding) and recognition of success (awards & salaries), specifically how this may change over time. We are also interested in analyzing birth month & playing statistics, as Malcolm Gladwell suggests in \textit{Outliers} that players born earlier in the calender year tend to be more likely to reach the professional level.
