@@ -1,0 +1,55 @@
+---
+title: \vspace{0.5cm} \Large{Statistical Linear Models Project 3}
+author: "Moira Dillon & Mike Adams"
+date: "Due: Monday, March 26, 2018"
+output:
+  pdf_document:
+  latex_engine: xelatex
+---
+
+```{r, eval=TRUE, warning=FALSE, echo=FALSE, message=FALSE}
+require(ggplot2)
+require(broom)
+require(dplyr)
+#install.packages("ggvis")
+#install.packages('robustbase')
+#install.packages('investr')
+require(investr)
+require(gridExtra)
+require(robustbase)
+require(ggvis)
+```
+
+
+```{r, eval=TRUE, warning=FALSE, fig.height=2.5, fig.width=5}
+# data set of just last year of every player - available on git
+filtered_lahman <- read.csv("Lahman_filtered.csv", header=TRUE)
+filtered_lahman <- filtered_lahman[complete.cases(filtered_lahman), ]
+```
+
+
+Predict games played from salary: 
+```{r, eval=TRUE, warning=FALSE, fig.height=2.5, fig.width=5}
+tidy(lm(G ~ salary, data=filtered_lahman))
+
+tidy(lm(G ~ salary + height, data=filtered_lahman))
+
+# adj R2 = 0.09423
+summary(lm(G ~ salary + height + weight, data=filtered_lahman))
+
+# adj R2 =  0.8051
+summary(lm(G ~ salary + height + weight + RBI + AB + birthCountry, data=filtered_lahman))
+
+
+# examples of pair plots with really weird patterns 
+pairs(filtered_lahman[,1:3], pch=19, cex=.25)
+pairs(filtered_lahman[,1:4], pch=19, cex=.25)
+pairs(filtered_lahman[,1:10, 20], pch=19, cex=.25)
+
+#pairs(filtered_lahman[,1:34], pch=19, cex=.25)
+
+```
+
+Some have really weird patterns with straight lines, others very obvious linear patterns. How can we select specific ones to plot instead of just ranges? We want to see salary as well
+
+
