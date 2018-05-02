@@ -2,7 +2,6 @@
 title: |
   | \vspace{0.5cm} \Large{Statistical Linear Models Project 4}
 author: "Moira Dillon & Mike Adams"
-date: 'Due: Monday, April 30, 2018'
 output:
   pdf_document:
     latex_engine: xelatex
@@ -33,9 +32,9 @@ require(GGally)
 require(mgcv)
 ```
 
-## Sparse & Smooth Linear Models
-# Introduction 
-We analyzed The Lahman Baseball Database, available on R. (https://cran.r-project.org/web/packages/Lahman/Lahman.pdf) This database includes pitching, hitting, and fielding stats for Major League Baseball from 1871 through 2016. We are analyzing players salaries, statistics for batting during the regular season, along with birth month, height, and weight. As the Lahman Baseball database is very extensive, we have subsetted the data in a handful of ways. Because each player shows up in the data set multiple times (multiple years playing professional baseball), the original data is not independent. In order to analyze independent observational units, we will just be considering the last year of data for each player in the data set. Next, we filtered the data set to only keep the specific variables we are interested in (player ID, year, games played, at bats, runs, hits, home runs, RBIs, walks, strike outs, salary, birth month, weight, height. From here, we used complete.cases() to filter out any player that did not have an entry for each of these variables. We did this because batting statistics are not complete until 1955 and salary records do not begin until 1985, so the data was reduced to 1985-2016. By using complete.cases(), we reduce our data set from 18915 entried to 3557 entries. While this is quite a drop, we only want to analyze players that have complete data sets. This may bias the data, but it does result in a complete data  set that is better for model building. Additionally, as we began to analyze and visualize the data, we recognized that some players with very few games played were skewing the data. We only kept players with a minimum of 14 games played in a particular season (first quartile of games played), in order to minimize extreme data points, as there are 162 games in a single season. Ultimately, we were left with 2646 observations to analyze. Finally, we changed our year data to be from 0 to 31 instead of 1985-2016. We did this for the last project analysis, because we observed a coefficient that was particulary hard to interpret, but normalizing the data to start at zero resulted in a much easier coefficient to interpret.
+# Sparse & Smooth Linear Models
+## Introduction 
+We analyzed The Lahman Baseball Database, available on R. (https://cran.r-project.org/web/packages/Lahman/Lahman.pdf) This database includes pitching, hitting, and fielding stats for Major League Baseball from 1871 through 2016. We are analyzing players salaries, statistics for batting during the regular season, along with birth month, height, and weight. As the Lahman Baseball database is very extensive, we have sub-setted the data in a handful of ways. Because each player shows up in the data set multiple times (multiple years playing professional baseball), the original data is not independent. In order to analyze independent observational units, we will just be considering the last year of data for each player in the data set. Next, we filtered the data set to only keep the specific variables we are interested in (player ID, year, games played, at bats, runs, hits, home runs, RBIs, walks, strike outs, salary, birth month, weight, height. From here, we used complete.cases() to filter out any player that did not have an entry for each of these variables. We did this because batting statistics are not complete until 1955 and salary records do not begin until 1985, so the data was reduced to 1985-2016. By using complete.cases(), we reduce our data set from 18915 entries to 3557 entries. While this is quite a drop, we only want to analyze players that have complete data sets. This may bias the data, but it does result in a complete data  set that is better for model building. Additionally, as we began to analyze and visualize the data, we recognized that some players with very few games played were skewing the data. We only kept players with a minimum of 14 games played in a particular season (first quartile of games played), in order to minimize extreme data points, as there are 162 games in a single season. Ultimately, we were left with 2646 observations to analyze. Finally, we changed our year data to be from 0 to 31 instead of 1985-2016. We did this for the last project analysis, because we observed a coefficient that was particularly hard to interpret, but normalizing the data to start at zero resulted in a much easier coefficient to interpret.
 
 ```{r, eval=TRUE, warning=FALSE, fig.height=2.5, fig.width=5, include=FALSE}
 # data set of just last year of every player - available on git
@@ -50,20 +49,19 @@ filtered_lahman$yearID <- filtered_lahman$yearID - 1985
 ```
 
 
-# Multiple Linear Regression
+## Multiple Linear Regression
 
-From project 3, we determined that we can predict the log of salary using year, games played, number of hits, at bats, strike outs, walks, RBIs, and height as explanatory variables.
-
+From project 3, we determined that we can predict the log of salary using year, games played, number of hits, at bats, strike outs, walks, RBIs, and height as explanatory variables. The coefficients are below:
 ```{r, eval=TRUE, warning=FALSE, echo=FALSE, message=FALSE}
 lahman.lm.best <- lm(log(salary) ~ yearID  + G + H + AB + SO+ BB + RBI + height, data=filtered_lahman)
 MLR_coefs <- lahman.lm.best$coefficients
+MLR_coefs
 ```
 
-# Ridge Regression
+## Ridge Regression
 
 The full data set includes year, games, home runs, hits, at bats, strike outs, walks, RBIs, hits, weight, height, and birth month. We create a date frame with all of the explanatory variables available to conduct ridge regression and LASSO. We use cross validation to find the best lamdba value and coefficients from RR. We output the plot of MSE for ridge regression below. The green line indicates the lambda with the with the smallest cross validated MSE. Each boxplot represents the MSE value for each left out value according to cross validation. 
 
-Finally, we output the ridge regression coefficients for our model along with the minimum lamdba value (and log(lambda)) to compare to LASSO.
 
 ```{r, eval=TRUE, warning=FALSE, echo=FALSE, message=FALSE}
 lambda.grid =10^seq(5,-2, length =100)
@@ -77,49 +75,53 @@ alpha=0, lambda = lambda.grid, standardize=TRUE)
 plot(lahman.ridge.cv)
 abline(v=log(lahman.ridge.cv$lambda.min), col="green")
 
-ridge_coefs <- coef(lahman.ridge.cv, s = "lambda.min")
-ridge_coefs
-lahman.ridge.cv$lambda.min
-log(lahman.ridge.cv$lambda.min)
-
 ```
 
 
-# LASSO
+We output the ridge regression coefficients for our model.
 
-Next we use cross validation to find the best lamdba value and the coefficients from LASSO. Now we output the plot of MSE for LASSO below where the green line indicates the lambda with the with the smallest cross validated MSE. We also output the LASSO coefficients for our model along with the minimum lamdba value (and log(lambda)) to compare to ridge regression.
+```{r, eval=TRUE, warning=FALSE, echo=FALSE, message=FALSE}
+
+ridge_coefs <- coef(lahman.ridge.cv, s = "lambda.min")
+ridge_coefs
+```
+
+Finally we output the minimum lamdba value (and log(lambda)) to compare to LASSO.
+```{r, eval=TRUE, warning=FALSE, echo=FALSE, message=FALSE}
+lahman.ridge.cv$lambda.min
+log(lahman.ridge.cv$lambda.min)
+```
+
+
+## LASSO
+
+Next we use cross validation to find the best lamdba value and the coefficients from LASSO. Now we output the plot of MSE for LASSO below where the green line indicates the lambda with the with the smallest cross validated MSE. 
 
 ```{r, eval=TRUE, warning=FALSE, echo=FALSE, message=FALSE}
 lahman.lasso.cv <- cv.glmnet(as.matrix(explanatory_vars), log(filtered_lahman$salary), alpha=1, lambda = lambda.grid, standardize=TRUE)
 plot(lahman.lasso.cv)
 abline(v=log(lahman.lasso.cv$lambda.min), col="green")
 
+```
+
+Here are the LASSO coefficients for our model:
+
+```{r, eval=TRUE, warning=FALSE, echo=FALSE, message=FALSE}
+
 lasso_coefs <- coef(lahman.lasso.cv, s = "lambda.min")
 lasso_coefs
+```
+
+
+Finally we output with the minimum lamdba value (and log(lambda)) to compare to ridge regression.
+```{r, eval=TRUE, warning=FALSE, echo=FALSE, message=FALSE}
 lahman.lasso.cv$lambda.min
 log(lahman.lasso.cv$lambda.min)
 ```
 
-# Compare MLR, RR, LASSO
+## Compare MLR, RR, LASSO
 
-We can compare and contrast the coefficients from LASSO, RR, and MLR.
-
-MLR coefficients:
-```{r, eval=TRUE, warning=FALSE, echo=FALSE, message=FALSE}
-as.matrix(MLR_coefs)
-```
-
-Ridge regression coefficients:
-```{r, eval=TRUE, warning=FALSE, echo=FALSE, message=FALSE}
-ridge_coefs
-```
-
-LASSO coefficients:
-```{r, eval=TRUE, warning=FALSE, echo=FALSE, message=FALSE}
-lasso_coefs
-```
-
-The first we notice is that for ridge regression and lasso, games, runs and strikeouts all have negative coefficients. For MLR, games, hits, and strikouts all have negative coefficients. It is important to note that our multiple linear regression model was built with a different combination of variables than ridge regression and lasso (does not include runs, home runs, birth month, and weight). Removing these variables and using different model techniques changes the sign of hits and runs, which is surpising. For all three models, the coefficients are low, close to zero, but yearID and height are the largest coefficient values in all three models. This indicates height and year have a larger effect on salary than the other predictor variables. In the lasso output, we notice that hits and homeruns were set to zero, indicating according to lasso they have very little effect on our model. 
+We can compare and contrast the coefficients from LASSO, RR, and MLR as displayed above. The first we notice is that for ridge regression and lasso, games, runs and strikeouts all have negative coefficients. For MLR, games, hits, and strikeouts all have negative coefficients. It is important to note that our multiple linear regression model was built with a different combination of variables than ridge regression and lasso (does not include runs, home runs, birth month, and weight). Removing these variables and using different model techniques changes the sign of hits and runs, which is surprising. For all three models, the coefficients are low, close to zero, but year Id and height are the largest coefficient values in all three models. This indicates height and year have a larger effect on salary than the other predictor variables. In the lasso output, we notice that hits and home runs were set to zero, indicating according to lasso they have very little effect on our model. 
 
 Finally we can use each of these models to predict log(salary) from our data frame explanatory variables which contains all of the predictor values. We merge this into a data frame to plot the three predictions against our observed values. We observe that the predictions follow a very similar trend for all three models, except that LASSO seems most heavily weighted towards lower values of log(salary).
 
@@ -138,7 +140,7 @@ ggplot(data=melt_df,aes(`log(salary)`,value,colour=variable))+
 
 ```
 
-# Regression Splines
+## Regression Splines
 
 We wanted to investigate further the impact of hits on salary because within this data are pitchers, who do not get a lot of hits but tend to have very high salaries due to their importance in the game of baseball. We also expect players who excel at offense, and therefore get a lot of hits, to have high salaries as well. Thus the relationship between hits and salaries is not likely to be linear and is a perfect relationship to investigate using smoothing splines and kernel smoothers. 
 
@@ -171,7 +173,7 @@ matlines(H.grid, sal.rsi.se ,lwd =1, col =" blue",lty =3)
 In all six cases we see the common trend that the plot starts by decreasing, then goes up at about 25 hits and then eventually turns downward again past 150 hits. However, as degrees of freedom gets higher the slope of the initial downward action gets steeper and the slope of the downturn and the end gets shallower.
 
 
-# LOESS
+## LOESS
 We also applied a kernel smoother to our hits and salary data, in this case we will be using LOESS. For the kernel smoother we investigated six different values for span: .4, .5, .75, 1, 2, and 3. The plots for our kernel smoothers are below:
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.height = 8, fig.width= 8}
@@ -195,25 +197,25 @@ matlines(H.grid, sal.lr.se ,lwd =1, col =" blue",lty =3)
 ```
 
 
-We notice immediatley that increasing span works to flatten out the function greatly. At spans of .4 and .5, the initial action is sinusoidal in nature before turing upward at around 25 hits and then turning downward again at around 150 hits. When we reach span of .75 the sinusoidal action at the beggining becomes a downward slope until about 25 hits, but the rest of the behavior of our function is similar to that of .4 and .5. From here as span increase the function becomes increasly flat until we hit a span of 2, where the entire function is only an upward curve (there are no turns in the function).
+We notice immediately that increasing span works to flatten out the function greatly. At spans of .4 and .5, the initial action is sinusoidal in nature before turning upward at around 25 hits and then turning downward again at around 150 hits. When we reach span of .75 the sinusoidal action at the beginning becomes a downward slope until about 25 hits, but the rest of the behavior of our function is similar to that of .4 and .5. From here as span increase the function becomes increasingly flat until we hit a span of 2, where the entire function is only an upward curve (there are no turns in the function).
 
 Having analyzed the 12 different fits that we have generated between smoothing splines and kernel smoothers, and without using cross-validation, I would say that the optimal model is the kernel smoother using a span of .75 gives us the best fit. A span of .75 gives us enough span to capture the low hit, high salary effect we believe pitchers will be giving us, and is high enough that it doesn't over fit the data with continuous upward growth at the higher values for hits.
 
-# Conclusion 
+## Conclusion 
 
-From this analysis, we were able to compare how multiple linear regression, ridge regression, and lasso model building techniques. We observe that when we predict log(salary) from games played, hits, at bats, strike outs, walks, RBIs, and player output using these three techniques, we observe fairly similar fitted coefficient values across the board. In all, the yearID and player height have the largest coefficient values, although all the coefficient values are still close to zero. It is challenging to interpret a model that is so complex with this many predictor varaibles, but we do see that each mdoel builing technique outputs similar predicted values for log(salary) (as seen in coefficients and plot). We were surprised by just how similar the three model outputs were at predicting log(salary), we expected there to beo more variability between the three models.
+From this analysis, we were able to compare how multiple linear regression, ridge regression, and lasso model building techniques. We observe that when we predict log(salary) from games played, hits, at bats, strike outs, walks, RBIs, and player output using these three techniques, we observe fairly similar fitted coefficient values across the board. In all, the year Id and player height have the largest coefficient values, although all the coefficient values are still close to zero. It is challenging to interpret a model that is so complex with this many predictor variables, but we do see that each model building technique outputs similar predicted values for log(salary) (as seen in coefficients and plot). We were surprised by just how similar the three model outputs were at predicting log(salary), we expected there to be more variability between the three models.
 
-Because of the complexity of this large scale model, it is important to see if nonlienar functions might lead to a better fit of the data. With multiple linear regression we assume linear relationships between log(salary) and the predictor variables. By using smoothing spline and kernel smoother methods, we can investigate how a nonlinear fit works for our data set. For this analysis, we changed our model to just be predicting the log(salary) from the number of hits because we expect a nonlinear relationship between these two variables, as described above. 
+Because of the complexity of this large scale model, it is important to see if nonlinear functions might lead to a better fit of the data. With multiple linear regression we assume linear relationships between log(salary) and the predictor variables. By using smoothing spline and kernel smoother methods, we can investigate how a nonlinear fit works for our data set. For this analysis, we changed our model to just be predicting the log(salary) from the number of hits because we expect a nonlinear relationship between these two variables, as described above. 
 
 Investigating the nonlinear nature of hits with log(salary) indicated the importance of looking further into linearity. Therefore, in the next sections, we further explore the shape of our data and more nonlinear functions.
 
-## Something New 
+# Something New 
 
-# Normal Probability Plots
+## Normal Probability Plots
 
 Early on in the project we decided to use a log transformation on the salary in order to make the data more appropriate for multiple linear regression. We made these decisions base entirely on residual plots earlier on. Here we will defend this decision using Normal Probability Plots.
 
-Normal Probability Plots plot the observed residuals from your model against the residuals of the normal distribution. If your data fits a gaussian distribution then we expect to see a slope of about 1. First we will use these plots to show that our multiple linear regression with explanatory variables year, games, hits, at bats, RBIs, walks, height, and strike outs with no transformation on salary does not fit the normal distribution:
+Normal Probability Plots plot the observed residuals from your model against the residuals of the normal distribution. If your data fits a Gaussian distribution then we expect to see a slope of about 1. First we will use these plots to show that our multiple linear regression with explanatory variables year, games, hits, at bats, RBIs, walks, height, and strike outs with no transformation on salary does not fit the normal distribution:
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.height = 5, fig.width= 5, fig.align='center'}
 
@@ -242,17 +244,17 @@ qqnorm(lahman.stdres,
 qqline(lahman.stdres)
 ```
 
-While it is still not a perfect fit, our data fits a gaussian distribution much better with the transformation than without it. Therefore we stand by our decision to use a log transformation on salary for our multiple linear regression.
+While it is still not a perfect fit, our data fits a Gaussian distribution much better with the transformation than without it. Therefore we stand by our decision to use a log transformation on salary for our multiple linear regression.
 
-# General Additive Model
+## General Additive Model
 
 For the next step, we used a general additive model (GAM) to analyze our data set to predict log(salary). A GAM is another type of statistical models, but instead of a linear relationship being fit between each predictor with the response, a non linear smooth function is fit to each variable. This allow us to extend our linear model by capture the non-linear nature of some of the relationships between our predictors and salary. Each variable is separated into sections by knots with polynomials fit into each section. This description of GAMs describes their purpose very well: 
-"GAMs in R are a nonparametric extension of GLMs, used often for the case when you have no a priori reason for choosing a particular response function (such as linear, quadratic, etc.) and want the data to 'speak for themselves'."  (http://plantecology.syr.edu/fridley/bio793/gam.html) 
+"GAMs in R are a non-parametric extension of GLMs, used often for the case when you have no a priori reason for choosing a particular response function (such as linear, quadratic, etc.) and want the data to 'speak for themselves'."  (http://plantecology.syr.edu/fridley/bio793/gam.html) 
 
 
-When we create a pairs plot of all of the variables in our model against salary, we can see that some of the relationships are not quite linear, so a GAM lets us try out different relationships that are not linear. With the output of a GAM model, we observe what happens with our response variable when we hold all other variables constant. A general additive model is appropritate when there are not interactions between the variables.
+When we create a pairs plot of all of the variables in our model against salary, we can see that some of the relationships are not quite linear, so a GAM lets us try out different relationships that are not linear. With the output of a GAM model, we observe what happens with our response variable when we hold all other variables constant. A general additive model is appropriate when there are not interactions between the variables.
 
-The first thing that we try is a GAM model with the same variables we used in our multiple linear regression model. For this first model, we fit a nonlinear function to each variable. We observe from our summary function that the expected df for hits, at bats, and heights is all 1 exactly, which indicates we actually should be using a linear model for these three variables. From the plots, we see what trend we expect for log(salary) when we hold all other variables constant. For hits, at bats, and height, we observe a linear relationship which is validated by the expected df. We see interesting patterns for the other variables. With year, we see a mostly positive relationship with log(salary), although there are a few dips in the earlier years. With games we observe a peak with a low number of games played, which we suspect could be due to pitchers having high salaries but low games played. We suspect pitchers may also influence the strike out trend, because we observe a mostly negative relationship with a increase at the end, which could also be explained by pitchers being poor batters but still receiving a high salary. Finally with walks and RBIs we see a positive nonlinear relationship with salary. The dotted lines represenet the confidence interval around the solid line indicating the function fit. 
+The first thing that we try is a GAM model with the same variables we used in our multiple linear regression model. For this first model, we fit a nonlinear function to each variable. We observe from our summary function that the expected df for hits, at bats, and heights is all 1 exactly, which indicates we actually should be using a linear model for these three variables. From the plots, we see what trend we expect for log(salary) when we hold all other variables constant. For hits, at bats, and height, we observe a linear relationship which is validated by the expected df. We see interesting patterns for the other variables. With year, we see a mostly positive relationship with log(salary), although there are a few dips in the earlier years. With games we observe a peak with a low number of games played, which we suspect could be due to pitchers having high salaries but low games played. We suspect pitchers may also influence the strike out trend, because we observe a mostly negative relationship with a increase at the end, which could also be explained by pitchers being poor batters but still receiving a high salary. Finally with walks and RBIs we see a positive nonlinear relationship with salary. The dotted lines represent the confidence interval around the solid line indicating the function fit. 
 
 ```{r, eval=TRUE, warning=FALSE, echo=FALSE, message=FALSE}
 salary.gam <- mgcv::gam(log(salary) ~ s(yearID) + s(G) + s(H) + s(AB) + s(SO) + s(BB) + s(RBI) + s(height), data=filtered_lahman)
@@ -271,10 +273,10 @@ summary(salary.gam.2)
 plot(salary.gam.2)
 ```
 
-The relationships between the nonlinaer variables and log(salary) stay the same but now we have coefficient values for the variables with linear relationships. Because this model technique relies on non-interaction, we can use lack of fit testing to determine if there are potential interactions we shoud look out for.
+The relationships between the nonlinear variables and log(salary) stay the same but now we have coefficient values for the variables with linear relationships. Because this model technique relies on non-interaction, we can use lack of fit testing to determine if there are potential interactions we should look out for.
 
 
-# Lack of Fit testing
+## Lack of Fit testing
 
 With so many explanatory variables that were included in our best model from our multiple linear regression techniques (hits, at bats, year, games, walks, RBIs, height, and strike outs) there is lots of room potential interaction between our explanatory variables. Some of these stats we could imagine right off the bat would be related, likes games played and at bats. For this reason we decided to do some lack of fit testing to find out more about some potential interactions. 
 
@@ -287,7 +289,7 @@ lahman.lm.interact <- lm(log(salary) ~ yearID  + G + H + AB + SO+ BB + RBI + hei
 anova(lahman.lm.best, lahman.lm.interact)
 ```
 
-We find an F-value of 11.491 on 2636 degrees of freedom, therefore we conclude that our current model derrived from multiple linear regression is not as good a fit as the model that includes an interaction term between Games and At Bats (p = 0.0007)
+We find an F-value of 11.491 on 2636 degrees of freedom, therefore we conclude that our current model derived from multiple linear regression is not as good a fit as the model that includes an interaction term between Games and At Bats (p = 0.0007)
 
 We repeated this analysis with three other interactions that we thought might be possible: at bats and hits, At bats and strike outs, and hits and RBIs. We conclude that the including interaction terms for at bats and hits or at bats and strike outs did not give a better fit for our data (F=3.14, df=2636, p=0.076; F=0.2518, df=2636, p=0.6158). On the other hand we did find that including the interaction term between hits and RBIs does improve the fit of our model (F=5.291, df=2636, p=0.022).
 
@@ -307,7 +309,29 @@ anova(lahman.lm.best, lahman.lm.interact2)
 anova(lahman.lm.best, lahman.lm.interact3)
 ```
 
+# Summary
 
-## Summary
+Our analysis of how hitting statistics and player traits relate to salary in Major League Baseball resulted in a model that can be used to predict player salary. We found the best linear model to be one predicting the log of player salary from games, at bats, hits, walks, strike outs, runs batted in, height, and year. Below are the coefficients and related statistics for this linear regression as well as a plot of the residual versus fitted values.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+
+summary(lahman.lm.best)
 
 
+
+```
+
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+par(mfrow=c(1,1))
+ggplot() + 
+  geom_point(aes(x=lahman.lm.best$fitted.values, y=lahman.lm.best$residuals))
+```
+
+The summary and residual plot demonstrate that while this model is significant, it is not a great fit for the data. While this is the best model we were able to obtain from our data with the regression methods we applied, it is far from adequate. I refer you to the section on lack of fit testing, where we show that including interaction terms in our model reveals a better fit for our observed data. Future work on this data should include investigations on interactions between variables.
+
+We believe part of the reason for the lack of fit of our model is presented in the LOESS and Spline Smoother sections of this write up. Because Pitchers make high salaries but tend to have poor batting statistics we believe our model could be greatly improved by including pitching statistics as well. This would help distinguish points where the player is just bad and doesn't make a high salary or is a pitcher and therefore has bad stats but still makes a high salary.
+
+For this analysis, we only looked at how salary is influenced by player ID, year, games played, at bats, runs, hits, home runs, RBIs, walks, strike outs, salary, birth month, weight, and height. While we were able to create a model that could predict salary based on a subset of these variables, two things stand out from our analysis. The first is that the relationships between these variables are very complex, and likely not as linear or independent as our multiple linear regression model assumes. The second piece that stood out to us was the information we did not include. Specifically, we think that including player position and possibly division would have been important in our model and analysis. As described above in a few locations, we believe that the pitchers skewed our results in a handful of places. However, by not having position data in the model, we could not confirm. 
+
+With these two pieces of information, future investigation of this data set to predict player salary should focus on nonlinear methods, include interactions terms, and include player position. 
