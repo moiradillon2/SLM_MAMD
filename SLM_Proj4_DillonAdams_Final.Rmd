@@ -254,13 +254,19 @@ For the next step, we used a general additive model (GAM) to analyze our data se
 
 When we create a pairs plot of all of the variables in our model against salary, we can see that some of the relationships are not quite linear, so a GAM lets us try out different relationships that are not linear. With the output of a GAM model, we observe what happens with our response variable when we hold all other variables constant. A general additive model is appropriate when there are not interactions between the variables.
 
-The first thing that we try is a GAM model with the same variables we used in our multiple linear regression model. For this first model, we fit a nonlinear function to each variable. We observe from our summary function that the expected df for hits, at bats, and heights is all 1 exactly, which indicates we actually should be using a linear model for these three variables. From the plots, we see what trend we expect for log(salary) when we hold all other variables constant. For hits, at bats, and height, we observe a linear relationship which is validated by the expected df. We see interesting patterns for the other variables. With year, we see a mostly positive relationship with log(salary), although there are a few dips in the earlier years. With games we observe a peak with a low number of games played, which we suspect could be due to pitchers having high salaries but low games played. We suspect pitchers may also influence the strike out trend, because we observe a mostly negative relationship with a increase at the end, which could also be explained by pitchers being poor batters but still receiving a high salary. Finally with walks and RBIs we see a positive nonlinear relationship with salary. The dotted lines represent the confidence interval around the solid line indicating the function fit. 
+The first thing that we try is a GAM model with the same variables we used in our multiple linear regression model. For this first model, we fit a nonlinear function to each variable. We observe from our summary function that the expected df for hits, at bats, and heights is all 1 exactly, which indicates we actually should be using a linear model for these three variables. 
 
 ```{r, eval=TRUE, warning=FALSE, echo=FALSE, message=FALSE}
 salary.gam <- mgcv::gam(log(salary) ~ s(yearID) + s(G) + s(H) + s(AB) + s(SO) + s(BB) + s(RBI) + s(height), data=filtered_lahman)
 summary(salary.gam)
-par(mfrow=c(2,4))
 
+```
+
+From the plots, we see what trend we expect for log(salary) when we hold all other variables constant. For hits, at bats, and height, we observe a linear relationship which is validated by the expected df. We see interesting patterns for the other variables. With year, we see a mostly positive relationship with log(salary), although there are a few dips in the earlier years. With games we observe a peak with a low number of games played, which we suspect could be due to pitchers having high salaries but low games played. We suspect pitchers may also influence the strike out trend, because we observe a mostly negative relationship with a increase at the end, which could also be explained by pitchers being poor batters but still receiving a high salary. Finally with walks and RBIs we see a positive nonlinear relationship with salary. The dotted lines represent the confidence interval around the solid line indicating the function fit. 
+
+```{r, eval=TRUE, warning=FALSE, echo=FALSE, message=FALSE}
+
+par(mfrow=c(2,4))
 plot(salary.gam)
 ```
 
@@ -314,18 +320,14 @@ anova(lahman.lm.best, lahman.lm.interact3)
 Our analysis of how hitting statistics and player traits relate to salary in Major League Baseball resulted in a model that can be used to predict player salary. We found the best linear model to be one predicting the log of player salary from games, at bats, hits, walks, strike outs, runs batted in, height, and year. Below are the coefficients and related statistics for this linear regression as well as a plot of the residual versus fitted values.
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
-
 summary(lahman.lm.best)
-
-
-
 ```
 
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 par(mfrow=c(1,1))
 ggplot() + 
-  geom_point(aes(x=lahman.lm.best$fitted.values, y=lahman.lm.best$residuals))
+  geom_point(aes(x=lahman.lm.best$fitted.values, y=lahman.lm.best$residuals)) +xlab("fitted values") + ylab("residual values")
 ```
 
 The summary and residual plot demonstrate that while this model is significant, it is not a great fit for the data. While this is the best model we were able to obtain from our data with the regression methods we applied, it is far from adequate. I refer you to the section on lack of fit testing, where we show that including interaction terms in our model reveals a better fit for our observed data. Future work on this data should include investigations on interactions between variables.
